@@ -18,19 +18,22 @@ namespace GP.Ervik.ParticipantManager.Api.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<ParticipantController> _logger;
 
-        public AuthenticationService(ILogger<ParticipantController> logger, MongoDbContext mongoContext, IConfiguration configuration)
+        public AuthenticationService(ILogger<ParticipantController> logger, MongoDbContext mongoContext,
+            IConfiguration configuration)
         {
             _mongoContext = mongoContext;
             _configuration = configuration;
             _logger = logger;
         }
+
         public async Task<AuthenticationResult> RegisterUser(AdministrationCreateDto administrationCreateDto)
         {
             try
             {
                 _logger.LogInformation("Attempting to register user with email");
 
-                var existingAdmin = await _mongoContext.Administrations.AnyAsync(a => a.Email == administrationCreateDto.Email);
+                var existingAdmin =
+                    await _mongoContext.Administrations.AnyAsync(a => a.Email == administrationCreateDto.Email);
                 if (existingAdmin)
                 {
                     _logger.LogWarning("Registration failed: Email already exists");
@@ -68,6 +71,7 @@ namespace GP.Ervik.ParticipantManager.Api.Services
                 };
             }
         }
+
         public async Task<AuthenticationResult> Login(string email, string password)
         {
             try
@@ -108,7 +112,8 @@ namespace GP.Ervik.ParticipantManager.Api.Services
                 new Claim(ClaimTypes.Name, admin.Email)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Key").Value));
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Key").Value));
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
             var token = new JwtSecurityToken(
                 claims: claims,
