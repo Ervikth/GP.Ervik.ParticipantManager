@@ -1,5 +1,3 @@
-
-using System.Text;
 using GP.Ervik.ParticipantManager.Api.Exceptions;
 using GP.Ervik.ParticipantManager.Api.Services;
 using GP.Ervik.ParticipantManager.Api.Settings;
@@ -9,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using System.Text;
 
 namespace GP.Ervik.ParticipantManager.Api
 {
@@ -34,7 +33,7 @@ namespace GP.Ervik.ParticipantManager.Api
             {
                 options.UseMongoDB(mongoDBSettings.ConnectionString, mongoDBSettings.DatabaseName);
             });
-            
+
             builder.Services.AddScoped<AuthenticationService>(); // Register AuthenticationService
 
             builder.Services.AddControllers();
@@ -65,7 +64,7 @@ namespace GP.Ervik.ParticipantManager.Api
                         ValidateAudience = false
                     };
                 });
-            
+
 
             var app = builder.Build();
 

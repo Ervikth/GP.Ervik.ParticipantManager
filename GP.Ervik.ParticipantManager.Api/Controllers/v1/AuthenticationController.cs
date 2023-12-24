@@ -1,6 +1,5 @@
 ﻿using GP.Ervik.ParticipantManager.Api.DTOs.v1;
 using GP.Ervik.ParticipantManager.Api.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
@@ -67,7 +66,5 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
-
-
     }
 }

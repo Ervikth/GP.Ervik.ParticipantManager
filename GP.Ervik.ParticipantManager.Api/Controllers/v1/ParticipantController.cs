@@ -27,17 +27,17 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             {
                 _logger.LogInformation("Retrieving all participants");
 
-                    var response = (await _mongoContext.Participants.ToListAsync())
-                    .Select(part => new ParticipantDto
-                    {
-                        Id = part.Id.ToString(),
-                        Name = part.Name,
-                        Email = part.Email,
-                        PhoneNumber = part.PhoneNumber,
-                        Allergens = part.Allergens,
-                        Comment = part.Comment
-                    });
-                    _logger.LogInformation("Retrieved participants");
+                var response = (await _mongoContext.Participants.ToListAsync())
+                .Select(part => new ParticipantDto
+                {
+                    Id = part.Id.ToString(),
+                    Name = part.Name,
+                    Email = part.Email,
+                    PhoneNumber = part.PhoneNumber,
+                    Allergens = part.Allergens,
+                    Comment = part.Comment
+                });
+                _logger.LogInformation("Retrieved participants");
 
                 return Ok(response);
             }
@@ -145,7 +145,7 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
-        
+
         [HttpDelete("{participantId}"), Authorize]
         public async Task<IActionResult> DeleteParticipant(string participantId)
         {

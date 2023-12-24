@@ -1,15 +1,14 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using GP.Ervik.ParticipantManager.Api.Controllers.v1;
+﻿using GP.Ervik.ParticipantManager.Api.Controllers.v1;
 using GP.Ervik.ParticipantManager.Api.DTOs.v1;
 using GP.Ervik.ParticipantManager.Api.Services.Results;
 using GP.Ervik.ParticipantManager.Data;
 using GP.Ervik.ParticipantManager.Data.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace GP.Ervik.ParticipantManager.Api.Services
 {

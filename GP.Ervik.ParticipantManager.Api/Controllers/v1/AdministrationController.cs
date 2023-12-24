@@ -1,6 +1,5 @@
 ﻿using GP.Ervik.ParticipantManager.Api.DTOs.v1;
 using GP.Ervik.ParticipantManager.Data;
-using GP.Ervik.ParticipantManager.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

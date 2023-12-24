@@ -1,6 +1,4 @@
-﻿using MongoDB.Bson;
-
-namespace GP.Ervik.ParticipantManager.Api.DTOs.v1
+﻿namespace GP.Ervik.ParticipantManager.Api.DTOs.v1
 {
     public class AdministrationDto
     {
