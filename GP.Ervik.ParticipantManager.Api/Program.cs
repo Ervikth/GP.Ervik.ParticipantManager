@@ -1,8 +1,14 @@
 
+using System.Text;
 using GP.Ervik.ParticipantManager.Api.Exceptions;
+using GP.Ervik.ParticipantManager.Api.Services;
 using GP.Ervik.ParticipantManager.Api.Settings;
 using GP.Ervik.ParticipantManager.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace GP.Ervik.ParticipantManager.Api
 {
@@ -28,11 +34,38 @@ namespace GP.Ervik.ParticipantManager.Api
             {
                 options.UseMongoDB(mongoDBSettings.ConnectionString, mongoDBSettings.DatabaseName);
             });
+            
+            builder.Services.AddScoped<AuthenticationService>(); // Register AuthenticationService
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+
+            //Integrating authorization for swagger.
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+                {
+                    Description = "Remember write bearer first then key. Ex. bearer YOUR_JWT_TOKEN",
+                    In = ParameterLocation.Header,
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+                options.OperationFilter<SecurityRequirementsOperationFilter>();
+            });
+            //Jwt
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Key"])),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
+            
 
             var app = builder.Build();
 
@@ -44,7 +77,6 @@ namespace GP.Ervik.ParticipantManager.Api
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
 
 
