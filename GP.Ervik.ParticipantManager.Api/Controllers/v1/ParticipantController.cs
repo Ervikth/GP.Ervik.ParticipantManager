@@ -20,7 +20,6 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             _logger = logger;
             _mongoContext = context;
         }
-
         [HttpGet, Authorize]
         public async Task<ActionResult<List<ParticipantDto>>> Get()
         {
@@ -29,15 +28,15 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
                 _logger.LogInformation("Retrieving all participants");
 
                 var response = (await _mongoContext.Participants.ToListAsync())
-                    .Select(part => new ParticipantDto
-                    {
-                        Id = part.Id.ToString(),
-                        Name = part.Name,
-                        Email = part.Email,
-                        PhoneNumber = part.PhoneNumber,
-                        Allergens = part.Allergens,
-                        Comment = part.Comment
-                    });
+                .Select(part => new ParticipantDto
+                {
+                    Id = part.Id.ToString(),
+                    Name = part.Name,
+                    Email = part.Email,
+                    PhoneNumber = part.PhoneNumber,
+                    Allergens = part.Allergens,
+                    Comment = part.Comment
+                });
                 _logger.LogInformation("Retrieved participants");
 
                 return Ok(response);
@@ -106,8 +105,7 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
 
                 _logger.LogInformation("Participant added successfully");
 
-                return CreatedAtAction(nameof(GetParticipant), new { participantId = participant.Id.ToString() },
-                    participant);
+                return CreatedAtAction(nameof(GetParticipant), new { participantId = participant.Id.ToString() }, participant);
             }
             catch (Exception ex)
             {
@@ -128,7 +126,6 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
                     _logger.LogWarning("Participant not found - ID: {ParticipantId}", participantId);
                     return NotFound($"Participant with ID {participantId} not found.");
                 }
-
                 if (participantDto != null) participant.Name = participantDto.Name;
                 if (participantDto.Email != null) participant.Email = participantDto.Email;
                 if (participantDto.PhoneNumber != null) participant.PhoneNumber = participantDto.PhoneNumber;

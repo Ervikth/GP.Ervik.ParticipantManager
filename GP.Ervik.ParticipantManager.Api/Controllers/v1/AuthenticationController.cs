@@ -16,7 +16,6 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             _authService = authService;
             _logger = logger;
         }
-
         [HttpPost("login")]
         public async Task<IActionResult> Login(string email, string password)
         {
@@ -50,7 +49,6 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             {
                 return BadRequest(ModelState);
             }
-
             try
             {
                 var registrationResult = await _authService.RegisterUser(administrationCreateDto);
