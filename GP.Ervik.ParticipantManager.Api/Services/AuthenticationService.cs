@@ -30,13 +30,13 @@ namespace GP.Ervik.ParticipantManager.Api.Services
         {
             try
             {
-                _logger.LogInformation("Attempting to register user with email");
+                _logger.LogInformation("Attempting to register user with username");
 
                 var existingAdmin =
-                    await _mongoContext.Administrations.AnyAsync(a => a.Email == administrationCreateDto.Email);
+                    await _mongoContext.Administrations.AnyAsync(a => a.Username == administrationCreateDto.Username);
                 if (existingAdmin)
                 {
-                    _logger.LogWarning("Registration failed: Email already exists");
+                    _logger.LogWarning("Registration failed: Username already exists");
                     return new AuthenticationResult { IsAuthenticated = false, Token = null };
                 }
 
@@ -45,14 +45,14 @@ namespace GP.Ervik.ParticipantManager.Api.Services
                 {
                     Id = ObjectId.GenerateNewId(),
                     Name = administrationCreateDto.Name,
-                    Email = administrationCreateDto.Email,
+                    Username = administrationCreateDto.Username,
                     Password = passwordHash,
                 };
 
                 await _mongoContext.Administrations.AddAsync(admin);
                 await _mongoContext.SaveChangesAsync();
 
-                _logger.LogInformation("User registered successfully with email");
+                _logger.LogInformation("User registered successfully with username");
 
                 string token = CreateToken(admin);
                 return new AuthenticationResult
@@ -63,7 +63,7 @@ namespace GP.Ervik.ParticipantManager.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred during user registration with email");
+                _logger.LogError(ex, "An error occurred during user registration with username");
                 return new AuthenticationResult
                 {
                     IsAuthenticated = false,
@@ -72,27 +72,27 @@ namespace GP.Ervik.ParticipantManager.Api.Services
             }
         }
 
-        public async Task<AuthenticationResult> Login(string email, string password)
+        public async Task<AuthenticationResult> Login(string username, string password)
         {
             try
             {
-                _logger.LogInformation("Attempting login for user with email");
+                _logger.LogInformation("Attempting login for user with username");
 
-                var admin = await _mongoContext.Administrations.SingleOrDefaultAsync(p => p.Email == email);
+                var admin = await _mongoContext.Administrations.SingleOrDefaultAsync(p => p.Username == username);
 
                 if (admin == null)
                 {
-                    _logger.LogWarning("Login failed: User not found for email");
+                    _logger.LogWarning("Login failed: User not found for username");
                     return new AuthenticationResult { IsAuthenticated = false, Token = null };
                 }
 
                 if (!BCrypt.Net.BCrypt.Verify(password, admin.Password))
                 {
-                    _logger.LogWarning("Login failed: Incorrect password for email");
+                    _logger.LogWarning("Login failed: Incorrect password for username");
                     return new AuthenticationResult { IsAuthenticated = false, Token = null };
                 }
 
-                _logger.LogInformation("User logged in successfully with email");
+                _logger.LogInformation("User logged in successfully with username");
 
                 // User is authenticated, create token
                 string token = CreateToken(admin);
@@ -100,7 +100,7 @@ namespace GP.Ervik.ParticipantManager.Api.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred during login for email");
+                _logger.LogError(ex, "An error occurred during login for username");
                 return new AuthenticationResult { IsAuthenticated = false, Token = null };
             }
         }
@@ -109,7 +109,7 @@ namespace GP.Ervik.ParticipantManager.Api.Services
         {
             List<Claim> claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, admin.Email)
+                new Claim(ClaimTypes.Name, admin.Username)
             };
 
             var key = new SymmetricSecurityKey(

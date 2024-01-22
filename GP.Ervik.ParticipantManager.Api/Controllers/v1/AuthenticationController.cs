@@ -18,27 +18,27 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login(string username, string password)
         {
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                return BadRequest("Email and password are required.");
+                return BadRequest("Username and password are required.");
             }
 
             try
             {
-                var authResult = await _authService.Login(email, password);
+                var authResult = await _authService.Login(username, password);
 
                 if (authResult.IsAuthenticated)
                 {
                     return Ok(new { Token = authResult.Token });
                 }
 
-                return Unauthorized("Invalid email or password.");
+                return Unauthorized("Invalid username or password.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred during login for email.");
+                _logger.LogError(ex, "Error occurred during login for username.");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
@@ -64,7 +64,7 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred during registration for email.");
+                _logger.LogError(ex, "Error occurred during registration for username.");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
