@@ -1,7 +1,7 @@
-﻿using GP.Ervik.ParticipantManager.Api.DTOs.v1;
-using GP.Ervik.ParticipantManager.Data;
+﻿using AutoMapper;
+using GP.Ervik.ParticipantManager.Api.DTOs.v1;
+using GP.Ervik.ParticipantManager.Data.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
 {
@@ -10,12 +10,15 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
     public class AdministrationController : ControllerBase
     {
         private readonly ILogger<AdministrationController> _logger;
-        private readonly MongoDbContext _mongoContext;
 
-        public AdministrationController(ILogger<AdministrationController> logger, MongoDbContext context)
+        private readonly IAdministrationRepository _administrationRepository;
+        private readonly IMapper _mapper;
+
+        public AdministrationController(ILogger<AdministrationController> logger, IAdministrationRepository administrationRepository, IMapper mapper)
         {
             _logger = logger;
-            _mongoContext = context;
+            _administrationRepository = administrationRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -24,15 +27,10 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             try
             {
                 _logger.LogInformation("Getting list of administrations");
+                var administrations = await _administrationRepository.GetAllAdministrationsAsync();
+                var administrationsToReturn = _mapper.Map<IEnumerable<AdministrationDto>>(administrations);
 
-                var response = (await _mongoContext.Administrations.ToListAsync())
-                    .Select(admin => new AdministrationReadDto
-                    {
-                        Id = admin.Id.ToString(),
-                        Name = admin.Name,
-                        Email = admin.Email,
-                    });
-                return Ok(response);
+                return Ok(administrationsToReturn);
             }
             catch (Exception ex)
             {

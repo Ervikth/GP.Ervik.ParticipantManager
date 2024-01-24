@@ -2,6 +2,7 @@ using GP.Ervik.ParticipantManager.Api.Exceptions;
 using GP.Ervik.ParticipantManager.Api.Services;
 using GP.Ervik.ParticipantManager.Api.Settings;
 using GP.Ervik.ParticipantManager.Data;
+using GP.Ervik.ParticipantManager.Data.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -28,11 +29,15 @@ namespace GP.Ervik.ParticipantManager.Api
                 throw new ConfigurationException("MongoDB configuration is missing or incomplete.");
             }
 
+            // Register AutoMapper
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             // Add services to the container.
             builder.Services.AddDbContext<MongoDbContext>(options =>
             {
-                options.UseMongoDB(mongoDBSettings.ConnectionString, mongoDBSettings.DatabaseName);
+                options.UseMongoDB(mongoDBSettings.ConnectionString, mongoDBSettings.DatabaseName).EnableSensitiveDataLogging();
             });
+            builder.Services.AddScoped<IAdministrationRepository, AdministrationRepository>();
+            builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 
             builder.Services.AddScoped<AuthenticationService>(); // Register AuthenticationService
 

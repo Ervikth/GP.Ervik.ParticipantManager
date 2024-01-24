@@ -1,9 +1,9 @@
-﻿using GP.Ervik.ParticipantManager.Api.DTOs.v1;
-using GP.Ervik.ParticipantManager.Data;
+﻿using AutoMapper;
+using GP.Ervik.ParticipantManager.Api.DTOs.v1;
 using GP.Ervik.ParticipantManager.Data.Models;
+using GP.Ervik.ParticipantManager.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
 
 namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
@@ -13,34 +13,29 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
     public class ParticipantController : ControllerBase
     {
         private readonly ILogger<ParticipantController> _logger;
-        private readonly MongoDbContext _mongoContext;
+        private readonly IParticipantRepository _participantRepository;
+        private readonly IMapper _mapper;
 
-        public ParticipantController(ILogger<ParticipantController> logger, MongoDbContext context)
+        public ParticipantController(ILogger<ParticipantController> logger, IParticipantRepository participantRepository, IMapper mapper)
         {
             _logger = logger;
-            _mongoContext = context;
+            _participantRepository = participantRepository;
+            _mapper = mapper;
         }
 
         [HttpGet, Authorize]
-        public async Task<ActionResult<List<ParticipantDto>>> Get()
+        public async Task<ActionResult<IEnumerable<ParticipantDto>>> Get()
         {
             try
             {
                 _logger.LogInformation("Retrieving all participants");
 
-                var response = (await _mongoContext.Participants.ToListAsync())
-                    .Select(part => new ParticipantDto
-                    {
-                        Id = part.Id.ToString(),
-                        Name = part.Name,
-                        Email = part.Email,
-                        PhoneNumber = part.PhoneNumber,
-                        Allergens = part.Allergens,
-                        Comment = part.Comment
-                    });
+                var participants = await _participantRepository.GetAllParticipantsAsync();
+                var participantsToReturn = _mapper.Map<IEnumerable<ParticipantDto>>(participants);
+
                 _logger.LogInformation("Retrieved participants");
 
-                return Ok(response);
+                return Ok(participantsToReturn);
             }
             catch (Exception ex)
             {
@@ -49,14 +44,14 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             }
         }
 
-        [HttpGet("{participantId}"), Authorize]
-        public async Task<IActionResult> GetParticipant(string participantId)
+        [HttpGet("{Id}"), Authorize]
+        public async Task<IActionResult> GetParticipant(string Id)
         {
             try
             {
                 _logger.LogInformation("Getting participant");
 
-                var participant = await _mongoContext.Participants.FindAsync(ObjectId.Parse(participantId));
+                var participant = await _participantRepository.GetParticipantByIdAsync(ObjectId.Parse(Id));
 
                 if (participant == null)
                 {
@@ -64,18 +59,10 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
                     return NotFound("Participant with ID not found.");
                 }
 
-                var participantDto = new ParticipantDto
-                {
-                    Id = participant.Id.ToString(),
-                    Name = participant.Name,
-                    Email = participant.Email,
-                    PhoneNumber = participant.PhoneNumber,
-                    Allergens = participant.Allergens,
-                    Comment = participant.Comment
-                };
+                var participantToReturn = _mapper.Map<ParticipantDto>(participant);
 
                 _logger.LogInformation("Participant retrieved successfully");
-                return Ok(participantDto);
+                return Ok(participantToReturn);
             }
             catch (Exception ex)
             {
@@ -85,29 +72,19 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
         }
 
         [HttpPost, Authorize]
-        public async Task<ActionResult<ParticipantCreateDto>> AddParticipant(ParticipantCreateDto participantCreateDto)
+        public async Task<ActionResult<ParticipantDto>> AddParticipant(ParticipantCreateDto participantCreateDto)
         {
             try
             {
                 _logger.LogInformation("Adding new participant.");
 
-                var participant = new Participant
-                {
-                    Id = ObjectId.GenerateNewId(),
-                    Name = participantCreateDto.Name,
-                    Email = participantCreateDto.Email,
-                    PhoneNumber = participantCreateDto.PhoneNumber,
-                    Allergens = participantCreateDto.Allergens,
-                    Comment = participantCreateDto.Comment
-                };
-
-                await _mongoContext.Participants.AddAsync(participant);
-                await _mongoContext.SaveChangesAsync();
+                var participant = _mapper.Map<Participant>(participantCreateDto);
+                await _participantRepository.AddParticipantAsync(participant);
 
                 _logger.LogInformation("Participant added successfully");
 
-                return CreatedAtAction(nameof(GetParticipant), new { participantId = participant.Id.ToString() },
-                    participant);
+                var participantDto = _mapper.Map<ParticipantDto>(participant);
+                return CreatedAtAction(nameof(GetParticipant), new { Id = participantDto.Id.ToString() }, participantDto);
             }
             catch (Exception ex)
             {
@@ -122,25 +99,22 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             try
             {
                 _logger.LogInformation("Attempting to update participant.");
-                var participant = await _mongoContext.Participants.FindAsync(ObjectId.Parse(participantId));
+                var participant = await _participantRepository.GetParticipantByIdAsync(ObjectId.Parse(participantId));
                 if (participant == null)
                 {
                     _logger.LogWarning("Participant not found - ID: {ParticipantId}", participantId);
                     return NotFound($"Participant with ID {participantId} not found.");
                 }
 
-                if (participantDto != null) participant.Name = participantDto.Name;
-                if (participantDto.Email != null) participant.Email = participantDto.Email;
-                if (participantDto.PhoneNumber != null) participant.PhoneNumber = participantDto.PhoneNumber;
-                if (participantDto.Allergens != null) participant.Allergens = participantDto.Allergens;
-                if (participantDto.Comment != null) participant.Comment = participantDto.Comment;
+                _mapper.Map(participantDto, participant);
 
-                _mongoContext.Participants.Update(participant);
-                await _mongoContext.SaveChangesAsync();
+                await _participantRepository.UpdateParticipantAsync(participant);
+
+                var updatedParticipantDto = _mapper.Map<ParticipantDto>(participant);
 
                 _logger.LogInformation("Participant updated successfully - ID: {ParticipantId}", participantId);
 
-                return Ok(participant);
+                return Ok(updatedParticipantDto);
             }
             catch (Exception ex)
             {
@@ -155,15 +129,14 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             try
             {
                 _logger.LogInformation("Trying to delete participant - ID: {ParticipantId}", participantId);
-                var participant = await _mongoContext.Participants.FindAsync(ObjectId.Parse(participantId));
+                var participant = await _participantRepository.GetParticipantByIdAsync(ObjectId.Parse(participantId));
                 if (participant == null)
                 {
                     _logger.LogWarning("Participant not found - ID: {ParticipantId}", participantId);
                     return NotFound($"Participant with ID {participantId} not found.");
                 }
 
-                _mongoContext.Participants.Remove(participant);
-                await _mongoContext.SaveChangesAsync();
+                await _participantRepository.DeleteParticipantAsync(ObjectId.Parse(participantId));
 
                 _logger.LogInformation("Participant deleted successfully - ID: {ParticipantId}", participantId);
                 return NoContent();
