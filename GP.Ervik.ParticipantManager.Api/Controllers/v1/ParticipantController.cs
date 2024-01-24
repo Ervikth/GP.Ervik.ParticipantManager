@@ -23,7 +23,7 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             _mapper = mapper;
         }
 
-        [HttpGet, Authorize]
+        [HttpGet, AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ParticipantDto>>> Get()
         {
             try
