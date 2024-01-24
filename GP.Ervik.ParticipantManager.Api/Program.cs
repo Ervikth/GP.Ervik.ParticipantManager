@@ -1,4 +1,5 @@
 using GP.Ervik.ParticipantManager.Api.Exceptions;
+using GP.Ervik.ParticipantManager.Api.Interfaces;
 using GP.Ervik.ParticipantManager.Api.Services;
 using GP.Ervik.ParticipantManager.Api.Settings;
 using GP.Ervik.ParticipantManager.Data;
@@ -39,7 +40,7 @@ namespace GP.Ervik.ParticipantManager.Api
             builder.Services.AddScoped<IAdministrationRepository, AdministrationRepository>();
             builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 
-            builder.Services.AddScoped<AuthenticationService>(); // Register AuthenticationService
+            builder.Services.AddScoped<ITokenService, TokenService>();// Register AuthenticationService
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -64,12 +65,11 @@ namespace GP.Ervik.ParticipantManager.Api
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Key"])),
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["TokenKey"])),
                         ValidateIssuer = false,
                         ValidateAudience = false
                     };
                 });
-
 
             var app = builder.Build();
 
@@ -81,9 +81,10 @@ namespace GP.Ervik.ParticipantManager.Api
             }
 
             app.UseHttpsRedirection();
+
+
+            app.UseAuthentication();
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();

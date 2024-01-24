@@ -1,5 +1,6 @@
 ﻿using GP.Ervik.ParticipantManager.Api.Controllers.v1;
 using GP.Ervik.ParticipantManager.Api.DTOs.v1;
+using GP.Ervik.ParticipantManager.Api.Interfaces;
 using GP.Ervik.ParticipantManager.Api.Services.Results;
 using GP.Ervik.ParticipantManager.Data;
 using GP.Ervik.ParticipantManager.Data.Models;
@@ -12,20 +13,38 @@ using System.Text;
 
 namespace GP.Ervik.ParticipantManager.Api.Services
 {
-    public class AuthenticationService
+    public class TokenService : ITokenService
     {
         private readonly MongoDbContext _mongoContext;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<ParticipantController> _logger;
+        private readonly SymmetricSecurityKey _key;
 
-        public AuthenticationService(ILogger<ParticipantController> logger, MongoDbContext mongoContext,
-            IConfiguration configuration)
+        public TokenService(ILogger<ParticipantController> logger, MongoDbContext mongoContext,
+            IConfiguration config)
         {
             _mongoContext = mongoContext;
-            _configuration = configuration;
             _logger = logger;
+            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["TokenKey"]));
         }
+        public string CreateToken(Administration admin)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.NameId, admin.Username)
+            };
+            var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(7),
+                SigningCredentials = creds
+            };
+            var tokenHandler = new JwtSecurityTokenHandler();
 
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
+        }
         public async Task<AuthenticationResult> RegisterUser(AdministrationCreateDto administrationCreateDto)
         {
             try
@@ -103,25 +122,6 @@ namespace GP.Ervik.ParticipantManager.Api.Services
                 _logger.LogError(ex, "An error occurred during login for username");
                 return new AuthenticationResult { IsAuthenticated = false, Token = null };
             }
-        }
-
-        private string CreateToken(Administration admin)
-        {
-            List<Claim> claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, admin.Username)
-            };
-
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Key").Value));
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: cred
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

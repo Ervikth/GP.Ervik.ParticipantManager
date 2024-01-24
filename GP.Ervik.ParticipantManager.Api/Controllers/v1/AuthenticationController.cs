@@ -1,5 +1,5 @@
 ﻿using GP.Ervik.ParticipantManager.Api.DTOs.v1;
-using GP.Ervik.ParticipantManager.Api.Services;
+using GP.Ervik.ParticipantManager.Api.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
@@ -8,13 +8,39 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
     [Route("api/v1/auth")]
     public class AuthenticationController : ControllerBase
     {
-        private readonly AuthenticationService _authService;
+        private readonly ITokenService _tokenService;
         private readonly ILogger<AdministrationController> _logger;
 
-        public AuthenticationController(ILogger<AdministrationController> logger, AuthenticationService authService)
+
+        public AuthenticationController(ILogger<AdministrationController> logger, ITokenService tokenService)
         {
-            _authService = authService;
+            _tokenService = tokenService;
             _logger = logger;
+        }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(AdministrationCreateDto administrationCreateDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var registrationResult = await _tokenService.RegisterUser(administrationCreateDto);
+
+                if (registrationResult.IsAuthenticated)
+                {
+                    return Ok(new { Token = registrationResult.Token });
+                }
+
+                return BadRequest("Registration failed.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during registration for username.");
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
 
         [HttpPost("login")]
@@ -27,7 +53,7 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
 
             try
             {
-                var authResult = await _authService.Login(username, password);
+                var authResult = await _tokenService.Login(username, password);
 
                 if (authResult.IsAuthenticated)
                 {
@@ -43,30 +69,6 @@ namespace GP.Ervik.ParticipantManager.Api.Controllers.v1
             }
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(AdministrationCreateDto administrationCreateDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            try
-            {
-                var registrationResult = await _authService.RegisterUser(administrationCreateDto);
-
-                if (registrationResult.IsAuthenticated)
-                {
-                    return Ok(new { Token = registrationResult.Token });
-                }
-
-                return BadRequest("Registration failed.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred during registration for username.");
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
-        }
     }
 }
